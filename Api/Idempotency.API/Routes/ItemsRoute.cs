@@ -1,5 +1,6 @@
 using Idempotency.Application.Items.Commands;
 using MediatR;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Idempotency.API.Routes;
 
@@ -9,9 +10,9 @@ public static class ItemsRoute
     {
         var group = endpoints.MapGroup("/api/items");
 
-        group.MapPost("/", async (CreateItemDto request, IMediator mediator) =>
+        group.MapPost("/", async (CreateItemDto request, [FromHeader(Name = "Idempotency-Key")] Guid idempotencyKey, IMediator mediator) =>
         {
-            var command = new CreateItemCommand(Guid.NewGuid(), request.Name);
+            var command = new CreateItemCommand(idempotencyKey, request.Name);
             await mediator.Send(command);
             return Results.Created($"/api/items/{command.Id}", new { Id = command.Id, Name = request.Name });
         })
